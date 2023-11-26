@@ -1,8 +1,5 @@
 use egui_demo_lib::is_mobile;
 
-#[cfg(feature = "glow")]
-use eframe::glow;
-
 #[cfg(target_arch = "wasm32")]
 use core::any::Any;
 
@@ -97,7 +94,7 @@ pub struct State {
 pub struct WrapApp {
     state: State,
 
-    #[cfg(any(feature = "glow", feature = "wgpu"))]
+    #[cfg(feature = "wgpu")]
     custom3d: Option<crate::apps::Custom3d>,
 
     dropped_files: Vec<egui::DroppedFile>,
@@ -109,7 +106,7 @@ impl WrapApp {
         let mut slf = Self {
             state: State::default(),
 
-            #[cfg(any(feature = "glow", feature = "wgpu"))]
+            #[cfg(feature = "wgpu")]
             custom3d: crate::apps::Custom3d::new(_cc),
 
             dropped_files: Default::default(),
@@ -150,7 +147,7 @@ impl WrapApp {
             ),
         ];
 
-        #[cfg(any(feature = "glow", feature = "wgpu"))]
+        #[cfg(feature = "wgpu")]
         if let Some(custom3d) = &mut self.custom3d {
             vec.push((
                 "🔺 3D painting",
@@ -218,13 +215,6 @@ impl eframe::App for WrapApp {
         // On web, the browser controls `pixels_per_point`.
         if !frame.is_web() {
             egui::gui_zoom::zoom_with_keyboard_shortcuts(ctx, frame.info().native_pixels_per_point);
-        }
-    }
-
-    #[cfg(feature = "glow")]
-    fn on_exit(&mut self, gl: Option<&glow::Context>) {
-        if let Some(custom3d) = &mut self.custom3d {
-            custom3d.on_exit(gl);
         }
     }
 

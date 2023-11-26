@@ -24,7 +24,6 @@ web_screen_reader = ["eframe/web_screen_reader"]                  # experimental
 serde = ["dep:serde", "egui_demo_lib/serde", "egui/serde"]
 syntax_highlighting = ["egui_demo_lib/syntax_highlighting"]
 
-glow = ["eframe/glow"]
 wgpu = ["eframe/wgpu", "bytemuck"]
 
 
