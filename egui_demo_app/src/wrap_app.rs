@@ -178,8 +178,6 @@ impl WrapApp {
     }
 
     fn bar_contents(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
-        egui::widgets::global_dark_light_mode_switch(ui);
-
         ui.separator();
 
         ui.toggle_value(&mut self.state.backend_panel.open, "💻 Backend");
