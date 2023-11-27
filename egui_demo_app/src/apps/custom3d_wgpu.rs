@@ -244,7 +244,6 @@ impl eframe::App for Custom3d {
                         self.custom_painting(ui);
                     });
                     ui.label("Drag to rotate!");
-                    ui.add(egui_demo_lib::egui_github_link_file!());
                 });
         });
     }

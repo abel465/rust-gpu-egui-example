@@ -26,15 +26,13 @@ use-compiled-tools = ["spirv-builder/use-compiled-tools"]
 http = ["ehttp", "image", "poll-promise", "egui_extras/image"]
 persistence = ["eframe/persistence", "egui/persistence", "serde"]
 web_screen_reader = ["eframe/web_screen_reader"]                  # experimental
-serde = ["dep:serde", "egui_demo_lib/serde", "egui/serde"]
-syntax_highlighting = ["egui_demo_lib/syntax_highlighting"]
+serde = ["dep:serde", "egui/serde"]
 
 
 [dependencies]
 chrono = { version = "0.4", features = ["js-sys", "wasmbind"] }
 eframe = { version = "0.21.0", default-features = false, features = ["wgpu"] }
 egui = { version = "0.21.0", features = ["extra_debug_asserts"] }
-egui_demo_lib = { version = "0.21.0", features = ["chrono"] }
 tracing = "0.1"
 
 shared = { path = "../shaders/shared" }

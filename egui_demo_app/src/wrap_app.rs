@@ -1,28 +1,11 @@
-use egui_demo_lib::is_mobile;
-
 #[cfg(target_arch = "wasm32")]
 use core::any::Any;
-
-#[derive(Default)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct DemoApp {
-    demo_windows: egui_demo_lib::DemoWindows,
-}
-
-impl eframe::App for DemoApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.demo_windows.ui(ctx);
-    }
-}
-
-// ----------------------------------------------------------------------------
 
 /// The state that we persist (serialize).
 #[derive(Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(default))]
 pub struct State {
-    demo: DemoApp,
     #[cfg(feature = "http")]
     http: crate::apps::HttpApp,
 
@@ -62,11 +45,6 @@ impl WrapApp {
 
     fn apps_iter_mut(&mut self) -> impl Iterator<Item = (&str, &str, &mut dyn eframe::App)> {
         let mut vec = vec![
-            (
-                "✨ Demos",
-                "demo",
-                &mut self.state.demo as &mut dyn eframe::App,
-            ),
             #[cfg(feature = "http")]
             (
                 "⬇ HTTP",
@@ -123,9 +101,7 @@ impl eframe::App for WrapApp {
 
         self.state.backend_panel.update(ctx, frame);
 
-        if !is_mobile(ctx) {
-            self.backend_panel(ctx, frame);
-        }
+        self.backend_panel(ctx, frame);
 
         self.show_selected_app(ctx, frame);
 
@@ -206,14 +182,7 @@ impl WrapApp {
 
         ui.separator();
 
-        if is_mobile(ui.ctx()) {
-            ui.menu_button("💻 Backend", |ui| {
-                ui.set_style(ui.ctx().style()); // ignore the "menu" style set by `menu_button`.
-                self.backend_panel_contents(ui, frame);
-            });
-        } else {
-            ui.toggle_value(&mut self.state.backend_panel.open, "💻 Backend");
-        }
+        ui.toggle_value(&mut self.state.backend_panel.open, "💻 Backend");
 
         ui.separator();
 
