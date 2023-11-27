@@ -249,18 +249,9 @@ impl eframe::App for Custom3d {
             egui::ScrollArea::both()
                 .auto_shrink([false; 2])
                 .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 0.0;
-                        ui.label("The triangle is being painted using ");
-                        ui.hyperlink_to("WGPU", "https://wgpu.rs");
-                        ui.label(" (Portable Rust graphics API awesomeness)");
-                    });
-                    ui.label("It's not a very impressive demo, but it shows you can embed 3D inside of egui.");
-
                     egui::Frame::canvas(ui.style()).show(ui, |ui| {
                         self.custom_painting(ui);
                     });
-                    ui.label("Drag to rotate!");
                 });
         });
     }
@@ -268,11 +259,11 @@ impl eframe::App for Custom3d {
 
 impl Custom3d {
     fn custom_painting(&mut self, ui: &mut egui::Ui) {
-        let (rect, response) =
-            ui.allocate_exact_size(egui::Vec2::splat(600.0), egui::Sense::drag());
+        let available_size = ui.available_size();
+        let (rect, response) = ui.allocate_exact_size(available_size, egui::Sense::drag());
 
-        self.shader_constants.width = rect.width() as u32;
-        self.shader_constants.height = rect.height() as u32;
+        self.shader_constants.width = available_size.x as u32;
+        self.shader_constants.height = available_size.y as u32;
         self.shader_constants.translate_x -= response.drag_delta().x;
         self.shader_constants.translate_y -= response.drag_delta().y;
 
