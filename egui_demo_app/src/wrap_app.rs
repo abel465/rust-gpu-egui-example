@@ -5,20 +5,6 @@ use core::any::Any;
 
 #[derive(Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-struct EasyMarkApp {
-    editor: egui_demo_lib::easy_mark::EasyMarkEditor,
-}
-
-impl eframe::App for EasyMarkApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.editor.panels(ctx);
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-#[derive(Default)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct DemoApp {
     demo_windows: egui_demo_lib::DemoWindows,
 }
@@ -37,7 +23,6 @@ impl eframe::App for DemoApp {
 #[cfg_attr(feature = "serde", serde(default))]
 pub struct State {
     demo: DemoApp,
-    easy_mark_editor: EasyMarkApp,
     #[cfg(feature = "http")]
     http: crate::apps::HttpApp,
 
@@ -83,11 +68,6 @@ impl WrapApp {
                 "✨ Demos",
                 "demo",
                 &mut self.state.demo as &mut dyn eframe::App,
-            ),
-            (
-                "🖹 EasyMark editor",
-                "easymark",
-                &mut self.state.easy_mark_editor as &mut dyn eframe::App,
             ),
             #[cfg(feature = "http")]
             (
