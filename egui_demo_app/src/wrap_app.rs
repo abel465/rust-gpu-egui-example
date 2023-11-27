@@ -31,25 +31,6 @@ impl eframe::App for DemoApp {
 
 // ----------------------------------------------------------------------------
 
-#[derive(Default)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct FractalClockApp {
-    fractal_clock: crate::apps::FractalClock,
-}
-
-impl eframe::App for FractalClockApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default()
-            .frame(egui::Frame::dark_canvas(&ctx.style()))
-            .show(ctx, |ui| {
-                self.fractal_clock
-                    .ui(ui, Some(crate::seconds_since_midnight()));
-            });
-    }
-}
-
-// ----------------------------------------------------------------------------
-
 /// The state that we persist (serialize).
 #[derive(Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -59,7 +40,6 @@ pub struct State {
     easy_mark_editor: EasyMarkApp,
     #[cfg(feature = "http")]
     http: crate::apps::HttpApp,
-    clock: FractalClockApp,
 
     selected_anchor: String,
     backend_panel: super::backend_panel::BackendPanel,
@@ -114,11 +94,6 @@ impl WrapApp {
                 "⬇ HTTP",
                 "http",
                 &mut self.state.http as &mut dyn eframe::App,
-            ),
-            (
-                "🕑 Fractal Clock",
-                "clock",
-                &mut self.state.clock as &mut dyn eframe::App,
             ),
         ];
 
