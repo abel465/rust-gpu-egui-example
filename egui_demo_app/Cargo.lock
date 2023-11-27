@@ -776,7 +776,6 @@ dependencies = [
  "image",
  "poll-promise",
  "serde",
- "shared",
  "spirv-builder",
  "spirv-std",
  "tracing",
@@ -1510,14 +1509,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62bb907fe88d54d8d9ce32a3cceab4218ed2f6b7d35617cafe9adf84e43919cb"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "mandelbrot"
-version = "0.0.0"
-dependencies = [
- "shared",
- "spirv-std",
 ]
 
 [[package]]
@@ -2425,14 +2416,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
 dependencies = [
  "lazy_static",
-]
-
-[[package]]
-name = "shared"
-version = "0.0.0"
-dependencies = [
- "bytemuck",
- "spirv-std",
 ]
 
 [[package]]

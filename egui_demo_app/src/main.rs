@@ -25,6 +25,17 @@ fn main() -> Result<(), eframe::Error> {
 
         #[cfg(feature = "wgpu")]
         renderer: eframe::Renderer::Wgpu,
+        wgpu_options: egui_wgpu::WgpuConfiguration {
+            device_descriptor: wgpu::DeviceDescriptor {
+                label: None,
+                features: wgpu::Features::PUSH_CONSTANTS,
+                limits: wgpu::Limits {
+                    max_push_constant_size: 128,
+                    ..Default::default()
+                },
+            },
+            ..Default::default()
+        },
 
         ..Default::default()
     };
