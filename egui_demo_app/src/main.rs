@@ -24,6 +24,7 @@ fn main() -> Result<(), eframe::Error> {
         initial_window_size: Some([1280.0, 1024.0].into()),
 
         renderer: eframe::Renderer::Wgpu,
+
         wgpu_options: egui_wgpu::WgpuConfiguration {
             device_descriptor: wgpu::DeviceDescriptor {
                 label: None,

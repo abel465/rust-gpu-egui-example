@@ -2,7 +2,6 @@
 #![allow(clippy::missing_errors_doc)]
 
 mod apps;
-mod backend_panel;
 pub(crate) mod frame_history;
 mod wrap_app;
 

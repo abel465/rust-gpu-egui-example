@@ -7,7 +7,6 @@ use core::any::Any;
 #[cfg_attr(feature = "serde", serde(default))]
 pub struct State {
     selected_anchor: String,
-    backend_panel: super::backend_panel::BackendPanel,
 }
 
 /// Wraps many demo/test apps into one.
@@ -15,19 +14,23 @@ pub struct WrapApp {
     state: State,
 
     custom3d: Option<crate::apps::Custom3d>,
+
+    frame_history: crate::frame_history::FrameHistory,
 }
 
 impl WrapApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         #[allow(unused_mut)]
         let mut slf = Self {
             state: State::default(),
 
-            custom3d: crate::apps::Custom3d::new(_cc),
+            custom3d: crate::apps::Custom3d::new(cc),
+
+            frame_history: Default::default(),
         };
 
         #[cfg(feature = "persistence")]
-        if let Some(storage) = _cc.storage {
+        if let Some(storage) = cc.storage {
             if let Some(state) = eframe::get_value(storage, eframe::APP_KEY) {
                 slf.state = state;
             }
@@ -62,14 +65,12 @@ impl eframe::App for WrapApp {
     }
 
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        self.frame_history
+            .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
+
         #[cfg(target_arch = "wasm32")]
         if let Some(anchor) = frame.info().web_info.location.hash.strip_prefix('#') {
             self.state.selected_anchor = anchor.to_owned();
-        }
-
-        if self.state.selected_anchor.is_empty() {
-            let selected_anchor = self.apps_iter_mut().next().unwrap().0.to_owned();
-            self.state.selected_anchor = selected_anchor;
         }
 
         #[cfg(not(target_arch = "wasm32"))]
@@ -85,13 +86,9 @@ impl eframe::App for WrapApp {
             });
         });
 
-        self.state.backend_panel.update(ctx, frame);
-
-        self.backend_panel(ctx, frame);
+        ctx.request_repaint();
 
         self.show_selected_app(ctx, frame);
-
-        self.state.backend_panel.end_of_frame(ctx);
 
         // On web, the browser controls `pixels_per_point`.
         if !frame.is_web() {
@@ -106,47 +103,6 @@ impl eframe::App for WrapApp {
 }
 
 impl WrapApp {
-    fn backend_panel(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        // The backend-panel can be toggled on/off.
-        // We show a little animation when the user switches it.
-        let is_open =
-            self.state.backend_panel.open || ctx.memory(|mem| mem.everything_is_visible());
-
-        egui::SidePanel::left("backend_panel")
-            .resizable(false)
-            .show_animated(ctx, is_open, |ui| {
-                ui.vertical_centered(|ui| {
-                    ui.heading("💻 Backend");
-                });
-
-                ui.separator();
-                self.backend_panel_contents(ui, frame);
-            });
-    }
-
-    fn backend_panel_contents(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
-        self.state.backend_panel.ui(ui, frame);
-
-        ui.separator();
-
-        ui.horizontal(|ui| {
-            if ui
-                .button("Reset egui")
-                .on_hover_text("Forget scroll, positions, sizes etc")
-                .clicked()
-            {
-                ui.ctx().memory_mut(|mem| *mem = Default::default());
-                ui.close_menu();
-            }
-
-            if ui.button("Reset everything").clicked() {
-                self.state = Default::default();
-                ui.ctx().memory_mut(|mem| *mem = Default::default());
-                ui.close_menu();
-            }
-        });
-    }
-
     fn show_selected_app(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         let mut found_anchor = false;
         let selected_anchor = self.state.selected_anchor.clone();
@@ -157,17 +113,11 @@ impl WrapApp {
             }
         }
         if !found_anchor {
-            self.state.selected_anchor = "demo".into();
+            self.state.selected_anchor = "custom3d".into();
         }
     }
 
     fn bar_contents(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
-        ui.separator();
-
-        ui.toggle_value(&mut self.state.backend_panel.open, "💻 Backend");
-
-        ui.separator();
-
         let mut selected_anchor = self.state.selected_anchor.clone();
         for (name, anchor, _app) in self.apps_iter_mut() {
             if ui
@@ -182,31 +132,8 @@ impl WrapApp {
         }
         self.state.selected_anchor = selected_anchor;
 
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if false {
-                // TODO(emilk): fix the overlap on small screens
-                if clock_button(ui, crate::seconds_since_midnight()).clicked() {
-                    self.state.selected_anchor = "clock".to_owned();
-                    if frame.is_web() {
-                        ui.output_mut(|o| o.open_url("#clock"));
-                    }
-                }
-            }
+        ui.separator();
 
-            egui::warn_if_debug_build(ui);
-        });
+        ui.label(format!("FPS: {:.1}", self.frame_history.fps()));
     }
-}
-
-fn clock_button(ui: &mut egui::Ui, seconds_since_midnight: f64) -> egui::Response {
-    let time = seconds_since_midnight;
-    let time = format!(
-        "{:02}:{:02}:{:02}.{:02}",
-        (time % (24.0 * 60.0 * 60.0) / 3600.0).floor(),
-        (time % (60.0 * 60.0) / 60.0).floor(),
-        (time % 60.0).floor(),
-        (time % 1.0 * 100.0).floor()
-    );
-
-    ui.button(egui::RichText::new(time).monospace())
 }
