@@ -34,7 +34,6 @@ pub struct State {
 pub struct WrapApp {
     state: State,
 
-    #[cfg(feature = "wgpu")]
     custom3d: Option<crate::apps::Custom3d>,
 
     dropped_files: Vec<egui::DroppedFile>,
@@ -46,7 +45,6 @@ impl WrapApp {
         let mut slf = Self {
             state: State::default(),
 
-            #[cfg(feature = "wgpu")]
             custom3d: crate::apps::Custom3d::new(_cc),
 
             dropped_files: Default::default(),
@@ -77,7 +75,6 @@ impl WrapApp {
             ),
         ];
 
-        #[cfg(feature = "wgpu")]
         if let Some(custom3d) = &mut self.custom3d {
             vec.push((
                 "🔺 3D painting",

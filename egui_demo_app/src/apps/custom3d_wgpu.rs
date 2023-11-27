@@ -56,13 +56,6 @@ fn maybe_watch(
         // under cargo by setting these environment variables.
         std::env::set_var("OUT_DIR", env!("OUT_DIR"));
         std::env::set_var("PROFILE", env!("PROFILE"));
-        // let crate_name = match options.shader {
-        //     RustGPUShader::Mandelbrot => "mandelbrot",
-        //     RustGPUShader::RayMarching => "ray-marching",
-        //     RustGPUShader::RayMarching2D => "ray-marching-2d",
-        //     RustGPUShader::SierpinskiTriangle => "sierpinski-triangle",
-        //     RustGPUShader::KochSnowflake => "koch-snowflake",
-        // };
         let crate_name = "mandelbrot";
         let manifest_dir = env!("CARGO_MANIFEST_DIR");
         let crate_path = [manifest_dir, "..", "shaders", crate_name]

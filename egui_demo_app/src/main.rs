@@ -23,7 +23,6 @@ fn main() -> Result<(), eframe::Error> {
 
         initial_window_size: Some([1280.0, 1024.0].into()),
 
-        #[cfg(feature = "wgpu")]
         renderer: eframe::Renderer::Wgpu,
         wgpu_options: egui_wgpu::WgpuConfiguration {
             device_descriptor: wgpu::DeviceDescriptor {
