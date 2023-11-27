@@ -6,9 +6,6 @@ use core::any::Any;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(default))]
 pub struct State {
-    #[cfg(feature = "http")]
-    http: crate::apps::HttpApp,
-
     selected_anchor: String,
     backend_panel: super::backend_panel::BackendPanel,
 }
@@ -18,8 +15,6 @@ pub struct WrapApp {
     state: State,
 
     custom3d: Option<crate::apps::Custom3d>,
-
-    dropped_files: Vec<egui::DroppedFile>,
 }
 
 impl WrapApp {
@@ -29,8 +24,6 @@ impl WrapApp {
             state: State::default(),
 
             custom3d: crate::apps::Custom3d::new(_cc),
-
-            dropped_files: Default::default(),
         };
 
         #[cfg(feature = "persistence")]
@@ -44,14 +37,7 @@ impl WrapApp {
     }
 
     fn apps_iter_mut(&mut self) -> impl Iterator<Item = (&str, &str, &mut dyn eframe::App)> {
-        let mut vec = vec![
-            #[cfg(feature = "http")]
-            (
-                "⬇ HTTP",
-                "http",
-                &mut self.state.http as &mut dyn eframe::App,
-            ),
-        ];
+        let mut vec = vec![];
 
         if let Some(custom3d) = &mut self.custom3d {
             vec.push((
@@ -106,8 +92,6 @@ impl eframe::App for WrapApp {
         self.show_selected_app(ctx, frame);
 
         self.state.backend_panel.end_of_frame(ctx);
-
-        self.ui_file_drag_and_drop(ctx);
 
         // On web, the browser controls `pixels_per_point`.
         if !frame.is_web() {
@@ -211,73 +195,6 @@ impl WrapApp {
 
             egui::warn_if_debug_build(ui);
         });
-    }
-
-    fn ui_file_drag_and_drop(&mut self, ctx: &egui::Context) {
-        use egui::*;
-        use std::fmt::Write as _;
-
-        // Preview hovering files:
-        if !ctx.input(|i| i.raw.hovered_files.is_empty()) {
-            let text = ctx.input(|i| {
-                let mut text = "Dropping files:\n".to_owned();
-                for file in &i.raw.hovered_files {
-                    if let Some(path) = &file.path {
-                        write!(text, "\n{}", path.display()).ok();
-                    } else if !file.mime.is_empty() {
-                        write!(text, "\n{}", file.mime).ok();
-                    } else {
-                        text += "\n???";
-                    }
-                }
-                text
-            });
-
-            let painter =
-                ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("file_drop_target")));
-
-            let screen_rect = ctx.screen_rect();
-            painter.rect_filled(screen_rect, 0.0, Color32::from_black_alpha(192));
-            painter.text(
-                screen_rect.center(),
-                Align2::CENTER_CENTER,
-                text,
-                TextStyle::Heading.resolve(&ctx.style()),
-                Color32::WHITE,
-            );
-        }
-
-        // Collect dropped files:
-        ctx.input(|i| {
-            if !i.raw.dropped_files.is_empty() {
-                self.dropped_files = i.raw.dropped_files.clone();
-            }
-        });
-
-        // Show dropped files (if any):
-        if !self.dropped_files.is_empty() {
-            let mut open = true;
-            egui::Window::new("Dropped files")
-                .open(&mut open)
-                .show(ctx, |ui| {
-                    for file in &self.dropped_files {
-                        let mut info = if let Some(path) = &file.path {
-                            path.display().to_string()
-                        } else if !file.name.is_empty() {
-                            file.name.clone()
-                        } else {
-                            "???".to_owned()
-                        };
-                        if let Some(bytes) = &file.bytes {
-                            write!(info, " ({} bytes)", bytes.len()).ok();
-                        }
-                        ui.label(info);
-                    }
-                });
-            if !open {
-                self.dropped_files.clear();
-            }
-        }
     }
 }
 

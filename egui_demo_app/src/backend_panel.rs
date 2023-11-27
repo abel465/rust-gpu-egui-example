@@ -55,10 +55,6 @@ pub struct BackendPanel {
     #[cfg_attr(feature = "serde", serde(skip))]
     repaint_after_seconds: f32,
 
-    /// current slider value for current gui scale
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pixels_per_point: Option<f32>,
-
     #[cfg_attr(feature = "serde", serde(skip))]
     frame_history: crate::frame_history::FrameHistory,
 
@@ -71,7 +67,6 @@ impl Default for BackendPanel {
             open: false,
             run_mode: Default::default(),
             repaint_after_seconds: 1.0,
-            pixels_per_point: None,
             frame_history: Default::default(),
             egui_windows: Default::default(),
         }
@@ -104,10 +99,6 @@ impl BackendPanel {
     pub fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         egui::trace!(ui);
 
-        self.integration_ui(ui, frame);
-
-        ui.separator();
-
         self.run_mode_ui(ui);
 
         ui.separator();
@@ -130,126 +121,12 @@ impl BackendPanel {
 
         ui.separator();
 
-        #[cfg(target_arch = "wasm32")]
-        #[cfg(feature = "web_screen-reader")]
-        {
-            let mut screen_reader = ui.ctx().options(|o| o.screen_reader);
-            ui.checkbox(&mut screen_reader, "🔈 Screen reader").on_hover_text("Experimental feature: checking this will turn on the screen reader on supported platforms");
-            ui.ctx().options_mut(|o| o.screen_reader = screen_reader);
-        }
-
         #[cfg(not(target_arch = "wasm32"))]
         {
             ui.separator();
             if ui.button("Quit").clicked() {
                 frame.close();
             }
-        }
-    }
-
-    fn integration_ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
-        ui.horizontal(|ui| {
-            ui.spacing_mut().item_spacing.x = 0.0;
-            ui.label("egui running inside ");
-            ui.hyperlink_to(
-                "eframe",
-                "https://github.com/emilk/egui/tree/master/crates/eframe",
-            );
-            ui.label(".");
-        });
-
-        #[cfg(target_arch = "wasm32")]
-        ui.collapsing("Web info (location)", |ui| {
-            ui.monospace(format!("{:#?}", frame.info().web_info.location));
-        });
-
-        // On web, the browser controls `pixels_per_point`.
-        let integration_controls_pixels_per_point = frame.is_web();
-        if !integration_controls_pixels_per_point {
-            self.pixels_per_point_ui(ui, &frame.info());
-        }
-
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            ui.horizontal(|ui| {
-                {
-                    let mut fullscreen = frame.info().window_info.fullscreen;
-                    if ui
-                        .checkbox(&mut fullscreen, "🗖 Fullscreen (F11)")
-                        .on_hover_text("Fullscreen the window")
-                        .changed()
-                    {
-                        frame.set_fullscreen(fullscreen);
-                    }
-                }
-
-                if ui
-                    .button("📱 Phone Size")
-                    .on_hover_text("Resize the window to be small like a phone.")
-                    .clicked()
-                {
-                    // frame.set_window_size(egui::vec2(375.0, 812.0)); // iPhone 12 mini
-                    frame.set_window_size(egui::vec2(375.0, 667.0)); //  iPhone SE 2nd gen
-                    frame.set_fullscreen(false);
-                    ui.close_menu();
-                }
-            });
-
-            if !frame.info().window_info.fullscreen
-                && ui
-                    .button("Drag me to drag window")
-                    .is_pointer_button_down_on()
-            {
-                frame.drag_window();
-            }
-        }
-    }
-
-    fn pixels_per_point_ui(&mut self, ui: &mut egui::Ui, info: &eframe::IntegrationInfo) {
-        let pixels_per_point = self
-            .pixels_per_point
-            .get_or_insert_with(|| ui.ctx().pixels_per_point());
-
-        let mut reset = false;
-
-        ui.horizontal(|ui| {
-            ui.spacing_mut().slider_width = 90.0;
-
-            let response = ui
-                .add(
-                    egui::Slider::new(pixels_per_point, 0.5..=5.0)
-                        .logarithmic(true)
-                        .clamp_to_range(true)
-                        .text("Scale"),
-                )
-                .on_hover_text("Physical pixels per point.");
-
-            if response.drag_released() {
-                // We wait until mouse release to activate:
-                ui.ctx().set_pixels_per_point(*pixels_per_point);
-                reset = true;
-            } else if !response.is_pointer_button_down_on() {
-                // When not dragging, show the current pixels_per_point so others can change it.
-                reset = true;
-            }
-
-            if let Some(native_pixels_per_point) = info.native_pixels_per_point {
-                let enabled = ui.ctx().pixels_per_point() != native_pixels_per_point;
-                if ui
-                    .add_enabled(enabled, egui::Button::new("Reset"))
-                    .on_hover_text(format!(
-                        "Reset scale to native value ({:.1})",
-                        native_pixels_per_point
-                    ))
-                    .clicked()
-                {
-                    ui.ctx().set_pixels_per_point(native_pixels_per_point);
-                }
-            }
-        });
-
-        if reset {
-            self.pixels_per_point = None;
         }
     }
 
@@ -293,11 +170,6 @@ struct EguiWindows {
     // egui stuff:
     settings: bool,
     inspection: bool,
-    memory: bool,
-    output_events: bool,
-
-    #[cfg_attr(feature = "serde", serde(skip))]
-    output_event_history: std::collections::VecDeque<egui::output::OutputEvent>,
 }
 
 impl Default for EguiWindows {
@@ -311,9 +183,6 @@ impl EguiWindows {
         Self {
             settings: false,
             inspection: false,
-            memory: false,
-            output_events: false,
-            output_event_history: Default::default(),
         }
     }
 
@@ -321,34 +190,17 @@ impl EguiWindows {
         let Self {
             settings,
             inspection,
-            memory,
-            output_events,
-            output_event_history: _,
         } = self;
 
         ui.checkbox(settings, "🔧 Settings");
         ui.checkbox(inspection, "🔍 Inspection");
-        ui.checkbox(memory, "📝 Memory");
-        ui.checkbox(output_events, "📤 Output Events");
     }
 
     fn windows(&mut self, ctx: &egui::Context) {
         let Self {
             settings,
             inspection,
-            memory,
-            output_events,
-            output_event_history,
         } = self;
-
-        ctx.output(|o| {
-            for event in &o.events {
-                output_event_history.push_back(event.clone());
-            }
-        });
-        while output_event_history.len() > 1000 {
-            output_event_history.pop_front();
-        }
 
         egui::Window::new("🔧 Settings")
             .open(settings)
@@ -362,35 +214,6 @@ impl EguiWindows {
             .vscroll(true)
             .show(ctx, |ui| {
                 ctx.inspection_ui(ui);
-            });
-
-        egui::Window::new("📝 Memory")
-            .open(memory)
-            .resizable(false)
-            .show(ctx, |ui| {
-                ctx.memory_ui(ui);
-            });
-
-        egui::Window::new("📤 Output Events")
-            .open(output_events)
-            .resizable(true)
-            .default_width(520.0)
-            .show(ctx, |ui| {
-                ui.label(
-                    "Recent output events from egui. \
-            These are emitted when you interact with widgets, or move focus between them with TAB. \
-            They can be hooked up to a screen reader on supported platforms.",
-                );
-
-                ui.separator();
-
-                egui::ScrollArea::vertical()
-                    .stick_to_bottom(true)
-                    .show(ui, |ui| {
-                        for event in output_event_history {
-                            ui.label(format!("{:?}", event));
-                        }
-                    });
             });
     }
 }

@@ -23,9 +23,7 @@ default = ["persistence", "use-compiled-tools"]
 use-installed-tools = ["spirv-builder/use-installed-tools"]
 use-compiled-tools = ["spirv-builder/use-compiled-tools"]
 
-http = ["ehttp", "image", "poll-promise", "egui_extras/image"]
 persistence = ["eframe/persistence", "egui/persistence", "serde"]
-web_screen_reader = ["eframe/web_screen_reader"]                  # experimental
 serde = ["dep:serde", "egui/serde"]
 
 
@@ -41,17 +39,6 @@ wgpu = { version = "0.15.0", features = ["webgl", "spirv", "vulkan-portability"]
 spirv-builder = { workspace = true, features = ["watch"] }
 spirv-std = { workspace = true }
 bytemuck = { version = "1.7.1" }
-
-# Optional dependencies:
-egui_extras = { version = "0.21.0", optional = true }
-
-# feature "http":
-ehttp = { version = "0.2.0", optional = true }
-image = { version = "0.24", optional = true, default-features = false, features = [
-  "jpeg",
-  "png",
-] }
-poll-promise = { version = "0.2", optional = true, default-features = false }
 
 # feature "persistence":
 serde = { version = "1", optional = true, features = ["derive"] }
