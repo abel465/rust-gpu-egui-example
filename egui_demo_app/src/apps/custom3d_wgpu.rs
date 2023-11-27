@@ -115,6 +115,7 @@ fn maybe_watch(
 
 pub struct Custom3d {
     shader_constants: ShaderConstants,
+    start: std::time::Instant,
 }
 
 impl Custom3d {
@@ -239,6 +240,7 @@ impl Custom3d {
                 mouse_button_pressed: 0,
                 mouse_button_press_time: [0.0, 0.0, 0.0],
             },
+            start: std::time::Instant::now(),
         })
     }
 }
@@ -266,6 +268,7 @@ impl Custom3d {
         self.shader_constants.height = available_size.y as u32;
         self.shader_constants.translate_x -= response.drag_delta().x;
         self.shader_constants.translate_y -= response.drag_delta().y;
+        self.shader_constants.time = self.start.elapsed().as_secs_f32();
 
         // Clone locals so we can move them into the paint callback:
         let shader_constants = self.shader_constants;

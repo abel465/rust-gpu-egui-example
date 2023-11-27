@@ -2,7 +2,9 @@
 
 use complex::Complex;
 use shared::*;
-use spirv_std::glam::{vec2, vec4, Vec2, Vec4};
+use spirv_std::glam::{vec2, vec3, Vec2, Vec3, Vec4};
+#[cfg_attr(not(target_arch = "spirv"), allow(unused_imports))]
+use spirv_std::num_traits::Float;
 use spirv_std::spirv;
 
 #[spirv(fragment)]
@@ -21,14 +23,18 @@ pub fn main_fs(
         / constants.height as f32;
 
     let mut z = Complex::ZERO;
-    let mut n = 35;
+    let mut n = ((2.0 + (constants.time * 3.0).cos()) * 10.0) as u32;
     while z.length() < 2.0 && n > 0 {
         z = z * z + uv;
         n -= 1;
     }
 
-    let c = n as f32 / 35.0;
-    *output = vec4(c, c, c, 1.0);
+    let c = if n == 0 {
+        Vec3::ZERO
+    } else {
+        vec3(0.9, 0.6, 0.3)
+    };
+    *output = c.extend(1.0);
 }
 
 #[spirv(vertex)]
