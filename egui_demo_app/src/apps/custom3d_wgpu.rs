@@ -114,7 +114,7 @@ fn maybe_watch(
 }
 
 pub struct Custom3d {
-    angle: f32,
+    shader_constants: ShaderConstants,
 }
 
 impl Custom3d {
@@ -222,7 +222,24 @@ impl Custom3d {
                 uniform_buffer,
             });
 
-        Some(Self { angle: 0.0 })
+        Some(Self {
+            shader_constants: ShaderConstants {
+                width: 400,
+                height: 400,
+                time: 0.0,
+                cursor_x: 0.0,
+                cursor_y: 0.0,
+                drag_start_x: 0.0,
+                drag_start_y: 0.0,
+                drag_end_x: 0.0,
+                drag_end_y: 0.0,
+                zoom: 1.0,
+                translate_x: 0.0,
+                translate_y: 0.0,
+                mouse_button_pressed: 0,
+                mouse_button_press_time: [0.0, 0.0, 0.0],
+            },
+        })
     }
 }
 
@@ -252,12 +269,15 @@ impl eframe::App for Custom3d {
 impl Custom3d {
     fn custom_painting(&mut self, ui: &mut egui::Ui) {
         let (rect, response) =
-            ui.allocate_exact_size(egui::Vec2::splat(300.0), egui::Sense::drag());
+            ui.allocate_exact_size(egui::Vec2::splat(600.0), egui::Sense::drag());
 
-        self.angle += response.drag_delta().x * 0.01;
+        self.shader_constants.width = rect.width() as u32;
+        self.shader_constants.height = rect.height() as u32;
+        self.shader_constants.translate_x -= response.drag_delta().x;
+        self.shader_constants.translate_y -= response.drag_delta().y;
 
         // Clone locals so we can move them into the paint callback:
-        let angle = self.angle;
+        let shader_constants = self.shader_constants;
 
         // The callback function for WGPU is in two stages: prepare, and paint.
         //
@@ -272,16 +292,12 @@ impl Custom3d {
         //
         // The paint callback is called after prepare and is given access to the render pass, which
         // can be used to issue draw commands.
-        let cb = egui_wgpu::CallbackFn::new()
-            .prepare(move |device, queue, _encoder, paint_callback_resources| {
+        let cb = egui_wgpu::CallbackFn::new().paint(
+            move |_info, render_pass, paint_callback_resources| {
                 let resources: &TriangleRenderResources = paint_callback_resources.get().unwrap();
-                resources.prepare(device, queue, angle);
-                Vec::new()
-            })
-            .paint(move |_info, render_pass, paint_callback_resources| {
-                let resources: &TriangleRenderResources = paint_callback_resources.get().unwrap();
-                resources.paint(render_pass);
-            });
+                resources.paint(render_pass, shader_constants);
+            },
+        );
 
         let callback = egui::PaintCallback {
             rect,
@@ -299,43 +315,18 @@ struct TriangleRenderResources {
 }
 
 impl TriangleRenderResources {
-    fn prepare(&self, _device: &wgpu::Device, queue: &wgpu::Queue, angle: f32) {
-        // Update our uniform buffer with the angle from the UI
-        // queue.write_buffer(
-        //     &self.uniform_buffer,
-        //     0,
-        //     bytemuck::cast_slice(&[angle, 0.0, 0.0, 0.0]),
-        // );
-    }
-
-    fn paint<'rp>(&'rp self, render_pass: &mut wgpu::RenderPass<'rp>) {
-        // Draw our triangle!
+    fn paint<'rp>(
+        &'rp self,
+        render_pass: &mut wgpu::RenderPass<'rp>,
+        push_constants: ShaderConstants,
+    ) {
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
-
-        let push_constants = ShaderConstants {
-            width: 300,
-            height: 300,
-            time: 0.0,
-            cursor_x: 0.0,
-            cursor_y: 0.0,
-            drag_start_x: 0.0,
-            drag_start_y: 0.0,
-            drag_end_x: 0.0,
-            drag_end_y: 0.0,
-            zoom: 1.0,
-            translate_x: 0.0,
-            translate_y: 0.0,
-            mouse_button_pressed: 0,
-            mouse_button_press_time: [0.0, 0.0, 0.0],
-        };
-
         render_pass.set_push_constants(
             wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
             0,
             bytemuck::bytes_of(&push_constants),
         );
-
         render_pass.draw(0..3, 0..1);
     }
 }
