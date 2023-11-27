@@ -50,30 +50,6 @@ impl eframe::App for FractalClockApp {
 
 // ----------------------------------------------------------------------------
 
-#[derive(Default)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct ColorTestApp {
-    color_test: egui_demo_lib::ColorTest,
-}
-
-impl eframe::App for ColorTestApp {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            if frame.is_web() {
-                ui.label(
-                    "NOTE: Some old browsers stuck on WebGL1 without sRGB support will not pass the color test.",
-                );
-                ui.separator();
-            }
-            egui::ScrollArea::both().auto_shrink([false; 2]).show(ui, |ui| {
-                self.color_test.ui(ui);
-            });
-        });
-    }
-}
-
-// ----------------------------------------------------------------------------
-
 /// The state that we persist (serialize).
 #[derive(Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -84,7 +60,6 @@ pub struct State {
     #[cfg(feature = "http")]
     http: crate::apps::HttpApp,
     clock: FractalClockApp,
-    color_test: ColorTestApp,
 
     selected_anchor: String,
     backend_panel: super::backend_panel::BackendPanel,
@@ -155,12 +130,6 @@ impl WrapApp {
                 custom3d as &mut dyn eframe::App,
             ));
         }
-
-        vec.push((
-            "🎨 Color test",
-            "colors",
-            &mut self.state.color_test as &mut dyn eframe::App,
-        ));
 
         vec.into_iter()
     }
